@@ -1,0 +1,5 @@
+azure-identity==1.21.0
+azure-search-documents==11.6.0
+azure-storage-blob==12.25.1
+openai==1.82.0
+pypdf==5.4.0

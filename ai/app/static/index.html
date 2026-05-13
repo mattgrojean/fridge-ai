@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Appliance AI</title>
+    <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f3f6fb;
+            --surface: #ffffff;
+            --surface-muted: #f7f9fc;
+            --border: #d8e1ee;
+            --text: #152033;
+            --text-muted: #5f6b7a;
+            --accent: #0078d4;
+            --accent-dark: #005ea6;
+            --bot: #eef2f7;
+            --error: #b42318;
+            --error-bg: #fef3f2;
+            --shadow: 0 18px 45px rgba(21, 32, 51, 0.1);
+            --radius: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            background: var(--bg);
+            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+        }
+
+        body {
+            min-height: 100dvh;
+            overflow: hidden;
+        }
+
+        button, textarea, input {
+            font: inherit;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .app-shell {
+            height: 100dvh;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            padding: 0;
+        }
+
+        .panel {
+            width: 100%;
+            max-width: 960px;
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            min-height: 100dvh;
+            box-shadow: var(--shadow);
+        }
+
+        .auth-view {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at top right, rgba(0, 120, 212, 0.12), transparent 30%),
+                linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+        }
+
+        .auth-card {
+            width: min(100%, 420px);
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(216, 225, 238, 0.95);
+            border-radius: 24px;
+            padding: 32px 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .auth-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(0, 120, 212, 0.08);
+            color: var(--accent);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-bottom: 18px;
+        }
+
+        .auth-card h1 {
+            font-size: clamp(28px, 5vw, 36px);
+            line-height: 1.1;
+            margin: 0 0 12px;
+        }
+
+        .auth-card p {
+            margin: 0 0 24px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .primary-button,
+        .secondary-button,
+        .icon-button {
+            border: none;
+            cursor: pointer;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+        }
+
+        .primary-button {
+            width: 100%;
+            min-height: 52px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 10px 28px rgba(0, 120, 212, 0.22);
+        }
+
+        .primary-button:hover,
+        .primary-button:focus-visible {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .primary-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .secondary-button {
+            min-height: 42px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(0, 120, 212, 0.1);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .secondary-button:hover,
+        .secondary-button:focus-visible {
+            background: rgba(0, 120, 212, 0.16);
+        }
+
+        .chat-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100dvh;
+            background: linear-gradient(180deg, #fbfdff 0%, #f3f6fb 100%);
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: calc(14px + env(safe-area-inset-top)) 18px 14px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(18px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .brand {
+            min-width: 0;
+        }
+
+        .brand h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .brand p {
+            margin: 4px 0 0;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-pill {
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 9px 12px;
+            border-radius: 999px;
+            background: var(--surface-muted);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .message-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px 16px 140px;
+            scroll-behavior: smooth;
+        }
+
+        .message-list::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .message-list::-webkit-scrollbar-thumb {
+            background: rgba(95, 107, 122, 0.24);
+            border-radius: 999px;
+        }
+
+        .message-row {
+            display: flex;
+            margin-bottom: 14px;
+        }
+
+        .message-row.user {
+            justify-content: flex-end;
+        }
+
+        .message-row.assistant,
+        .message-row.system {
+            justify-content: flex-start;
+        }
+
+        .bubble {
+            max-width: min(82%, 720px);
+            border-radius: 20px;
+            padding: 14px 16px;
+            line-height: 1.55;
+            box-shadow: 0 10px 30px rgba(21, 32, 51, 0.08);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .message-row.user .bubble {
+            background: linear-gradient(135deg, var(--accent), #2392e5);
+            color: #fff;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message-row.assistant .bubble {
+            background: var(--bot);
+            color: var(--text);
+            border-bottom-left-radius: 6px;
+        }
+
+        .message-row.system .bubble {
+            background: var(--error-bg);
+            color: var(--error);
+            border: 1px solid rgba(180, 35, 24, 0.16);
+            border-bottom-left-radius: 6px;
+        }
+
+        .meta-label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            opacity: 0.72;
+        }
+
+        .citation-list {
+            margin-top: 10px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .citation-card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .citation-card summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .citation-card summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .citation-card summary::after {
+            content: "+";
+            font-size: 18px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .citation-card[open] summary::after {
+            content: "−";
+        }
+
+        .citation-body {
+            padding: 0 14px 14px;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+        }
+
+        .loading-bubble {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(21, 32, 51, 0.45);
+            animation: pulse 1.2s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes pulse {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.45; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .composer-wrap {
+            position: sticky;
+            bottom: 0;
+            z-index: 9;
+            padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+            background: linear-gradient(180deg, rgba(243, 246, 251, 0) 0%, rgba(243, 246, 251, 0.92) 14%, rgba(243, 246, 251, 1) 100%);
+        }
+
+        .composer {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 22px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 16px 30px rgba(21, 32, 51, 0.1);
+        }
+
+        .composer textarea {
+            flex: 1;
+            min-height: 52px;
+            max-height: 180px;
+            resize: none;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 16px;
+            line-height: 1.45;
+            color: var(--text);
+            padding: 12px 4px;
+        }
+
+        .composer textarea::placeholder {
+            color: #8792a2;
+        }
+
+        .icon-button {
+            min-width: 52px;
+            min-height: 52px;
+            border-radius: 16px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 0 16px;
+            box-shadow: 0 12px 28px rgba(0, 120, 212, 0.22);
+        }
+
+        .icon-button:hover,
+        .icon-button:focus-visible {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .icon-button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .footer-note {
+            margin-top: 8px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .topbar {
+                padding-left: 14px;
+                padding-right: 14px;
+            }
+
+            .brand p,
+            .user-pill {
+                display: none;
+            }
+
+            .message-list {
+                padding-left: 12px;
+                padding-right: 12px;
+                padding-bottom: 136px;
+            }
+
+            .bubble {
+                max-width: 92%;
+            }
+
+            .composer-wrap {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .composer {
+                gap: 10px;
+                border-radius: 18px;
+            }
+
+            .icon-button {
+                min-width: 50px;
+                padding: 0 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="appShell" class="app-shell">
+        <div class="panel">
+            <section id="loginView" class="auth-view hidden" data-testid="login-view">
+                <div class="auth-card">
+                    <div class="auth-eyebrow">Appliance AI</div>
+                    <h1>Manual answers for techs in the field</h1>
+                    <p id="loginMessage">Sign in with your Microsoft account to search service-manual context and get practical repair guidance in seconds.</p>
+                    <button id="loginButton" class="primary-button" data-testid="login-button">Sign in with Microsoft</button>
+                </div>
+            </section>
+
+            <section id="chatView" class="chat-view hidden" data-testid="chat-view">
+                <header class="topbar">
+                    <div class="brand">
+                        <h2>Appliance AI</h2>
+                        <p>RAG assistant for appliance repair technicians</p>
+                    </div>
+                    <div class="topbar-actions">
+                        <div id="userDisplay" class="user-pill" data-testid="user-display"></div>
+                        <button id="logoutButton" class="secondary-button" data-testid="logout-button">Logout</button>
+                    </div>
+                </header>
+
+                <main id="messageList" class="message-list" data-testid="message-list"></main>
+
+                <div class="composer-wrap">
+                    <div class="composer">
+                        <textarea id="messageInput" data-testid="message-input" rows="1" placeholder="Ask about diagnostics, parts, procedures, or troubleshooting steps..."></textarea>
+                        <button id="sendButton" class="icon-button" data-testid="send-button">Send</button>
+                    </div>
+                    <div class="footer-note">Use Enter to send • Shift+Enter for a new line</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            authConfig: null,
+            msalInstance: null,
+            account: null,
+            accessToken: "",
+            devMode: false,
+            conversationId: sessionStorage.getItem("conversation_id") || null,
+            loadingElement: null
+        };
+
+        const elements = {
+            loginView: document.getElementById("loginView"),
+            chatView: document.getElementById("chatView"),
+            loginButton: document.getElementById("loginButton"),
+            logoutButton: document.getElementById("logoutButton"),
+            loginMessage: document.getElementById("loginMessage"),
+            userDisplay: document.getElementById("userDisplay"),
+            messageList: document.getElementById("messageList"),
+            messageInput: document.getElementById("messageInput"),
+            sendButton: document.getElementById("sendButton")
+        };
+
+        function showLogin(message) {
+            if (message) {
+                elements.loginMessage.textContent = message;
+            }
+            elements.chatView.classList.add("hidden");
+            elements.loginView.classList.remove("hidden");
+        }
+
+        function showChat() {
+            elements.loginView.classList.add("hidden");
+            elements.chatView.classList.remove("hidden");
+            elements.messageInput.focus();
+        }
+
+        function autoResizeTextarea() {
+            elements.messageInput.style.height = "auto";
+            elements.messageInput.style.height = `${Math.min(elements.messageInput.scrollHeight, 180)}px`;
+        }
+
+        function scrollToBottom() {
+            requestAnimationFrame(() => {
+                elements.messageList.scrollTop = elements.messageList.scrollHeight;
+            });
+        }
+
+        function createMessageRow(role, labelText, bodyText) {
+            const row = document.createElement("div");
+            row.className = `message-row ${role}`;
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+
+            const label = document.createElement("div");
+            label.className = "meta-label";
+            label.textContent = labelText;
+
+            const body = document.createElement("div");
+            body.textContent = bodyText;
+
+            bubble.appendChild(label);
+            bubble.appendChild(body);
+            row.appendChild(bubble);
+            return { row, bubble };
+        }
+
+        function appendMessage(role, text, citations = []) {
+            const labelMap = {
+                user: "You",
+                assistant: "Appliance AI",
+                system: "System"
+            };
+            const { row, bubble } = createMessageRow(role, labelMap[role] || "Message", text);
+
+            if (role === "assistant" && citations.length) {
+                const citationList = document.createElement("div");
+                citationList.className = "citation-list";
+                citations.forEach((citation, index) => {
+                    const card = document.createElement("details");
+                    card.className = "citation-card";
+                    card.dataset.testid = `citation-card-${index}`;
+
+                    const summary = document.createElement("summary");
+                    summary.textContent = `${citation.source_file} • Page ${citation.page_number}`;
+
+                    const body = document.createElement("div");
+                    body.className = "citation-body";
+                    body.textContent = citation.content_snippet;
+
+                    card.appendChild(summary);
+                    card.appendChild(body);
+                    citationList.appendChild(card);
+                });
+                bubble.appendChild(citationList);
+            }
+
+            elements.messageList.appendChild(row);
+            scrollToBottom();
+            return row;
+        }
+
+        function showErrorMessage(message) {
+            appendMessage("system", message);
+        }
+
+        function showLoading() {
+            hideLoading();
+            const row = document.createElement("div");
+            row.className = "message-row assistant";
+            row.id = "loadingRow";
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+
+            const label = document.createElement("div");
+            label.className = "meta-label";
+            label.textContent = "Appliance AI";
+
+            const loading = document.createElement("div");
+            loading.className = "loading-bubble";
+            for (let i = 0; i < 3; i += 1) {
+                const dot = document.createElement("span");
+                dot.className = "loading-dot";
+                loading.appendChild(dot);
+            }
+
+            bubble.appendChild(label);
+            bubble.appendChild(loading);
+            row.appendChild(bubble);
+            elements.messageList.appendChild(row);
+            state.loadingElement = row;
+            scrollToBottom();
+        }
+
+        function hideLoading() {
+            if (state.loadingElement) {
+                state.loadingElement.remove();
+                state.loadingElement = null;
+            }
+        }
+
+        function setComposerState(disabled) {
+            elements.messageInput.disabled = disabled;
+            elements.sendButton.disabled = disabled;
+        }
+
+        async function getAccessToken() {
+            if (state.devMode) {
+                return "";
+            }
+
+            const scopes = [`api://${state.authConfig.clientId}/access_as_user`];
+            try {
+                const response = await state.msalInstance.acquireTokenSilent({
+                    scopes,
+                    account: state.account
+                });
+                state.accessToken = response.accessToken;
+                return state.accessToken;
+            } catch (error) {
+                if (error instanceof msal.InteractionRequiredAuthError) {
+                    await state.msalInstance.acquireTokenRedirect({ scopes, account: state.account });
+                    return "";
+                }
+                throw error;
+            }
+        }
+
+        async function enterChat() {
+            const account = state.account;
+            const displayName = state.devMode
+                ? "Development User"
+                : (account.name || account.username || "Signed in");
+            elements.userDisplay.textContent = displayName;
+            showChat();
+            if (!elements.messageList.childElementCount) {
+                appendMessage(
+                    "assistant",
+                    "Hi. Ask a question about diagnostics, repair procedures, parts, or service manual steps. I will answer from the indexed manuals and provide citations."
+                );
+            }
+            try {
+                await getAccessToken();
+            } catch (error) {
+                showErrorMessage(`Authentication error: ${error.message || error}`);
+            }
+        }
+
+        async function login() {
+            const scopes = [`api://${state.authConfig.clientId}/access_as_user`];
+            await state.msalInstance.loginRedirect({ scopes });
+        }
+
+        async function logout() {
+            sessionStorage.removeItem("conversation_id");
+            state.conversationId = null;
+            if (state.devMode) {
+                window.location.reload();
+                return;
+            }
+            await state.msalInstance.logoutRedirect({
+                account: state.account,
+                postLogoutRedirectUri: window.location.origin
+            });
+        }
+
+        async function sendMessage() {
+            const text = elements.messageInput.value.trim();
+            if (!text) {
+                return;
+            }
+
+            appendMessage("user", text);
+            elements.messageInput.value = "";
+            autoResizeTextarea();
+            setComposerState(true);
+            showLoading();
+
+            try {
+                const token = await getAccessToken();
+                const headers = {
+                    "Content-Type": "application/json"
+                };
+                if (token) {
+                    headers.Authorization = `Bearer ${token}`;
+                }
+
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        message: text,
+                        conversation_id: state.conversationId
+                    })
+                });
+
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(payload.detail || "Request failed.");
+                }
+
+                state.conversationId = payload.conversation_id;
+                sessionStorage.setItem("conversation_id", state.conversationId);
+                appendMessage("assistant", payload.answer, payload.citations || []);
+            } catch (error) {
+                showErrorMessage(error.message || "Something went wrong while sending the message.");
+            } finally {
+                hideLoading();
+                setComposerState(false);
+                elements.messageInput.focus();
+            }
+        }
+
+        async function initializeAuth() {
+            state.authConfig = await fetch("/auth-config").then(async (response) => {
+                if (!response.ok) {
+                    throw new Error("Unable to load authentication configuration.");
+                }
+                return response.json();
+            });
+
+            if (state.authConfig.clientId === "dev-skip-auth") {
+                state.devMode = true;
+                await enterChat();
+                return;
+            }
+
+            const msalConfig = {
+                auth: {
+                    clientId: state.authConfig.clientId,
+                    authority: `https://login.microsoftonline.com/${state.authConfig.tenantId}`,
+                    redirectUri: window.location.origin
+                },
+                cache: {
+                    cacheLocation: "sessionStorage"
+                }
+            };
+
+            state.msalInstance = new msal.PublicClientApplication(msalConfig);
+            await state.msalInstance.initialize();
+
+            const redirectResponse = await state.msalInstance.handleRedirectPromise();
+            if (redirectResponse && redirectResponse.account) {
+                state.account = redirectResponse.account;
+            }
+
+            const accounts = state.msalInstance.getAllAccounts();
+            if (!state.account && accounts.length > 0) {
+                state.account = accounts[0];
+            }
+
+            if (!state.account) {
+                showLogin();
+                return;
+            }
+
+            await enterChat();
+        }
+
+        elements.loginButton.addEventListener("click", () => {
+            login().catch((error) => {
+                showLogin(`Sign-in failed: ${error.message || error}`);
+            });
+        });
+
+        elements.logoutButton.addEventListener("click", () => {
+            logout().catch((error) => {
+                showErrorMessage(`Logout failed: ${error.message || error}`);
+            });
+        });
+
+        elements.sendButton.addEventListener("click", () => {
+            sendMessage();
+        });
+
+        elements.messageInput.addEventListener("input", autoResizeTextarea);
+        elements.messageInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        autoResizeTextarea();
+        initializeAuth().catch((error) => {
+            showLogin(`Startup failed: ${error.message || error}`);
+        });
+    </script>
+</body>
+</html>

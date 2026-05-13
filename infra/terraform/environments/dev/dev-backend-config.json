@@ -1,0 +1,6 @@
+{
+  "resource_group_name": "YOUR_STATE_RG",
+  "storage_account_name": "YOUR_STATE_SA",
+  "container_name": "tfstate",
+  "key": "appliance-ai-v2-dev.tfstate"
+}
