@@ -65,7 +65,7 @@ def _build_lookup_url(endpoint: str, index_name: str, doc_id: str) -> str:
     return f"{endpoint}/indexes('{quoted_index_name}')/docs('{quoted_doc_id}')"
 
 
-def load_search_document(doc_id: str) -> dict:
+def load_search_document(doc_id: str) -> dict | None:
     endpoint, index_name = _get_search_service_config()
     access_token = get_search_credential().get_token(SEARCH_TOKEN_SCOPE)
     response = get_search_http_client().get(
@@ -76,6 +76,8 @@ def load_search_document(doc_id: str) -> dict:
         },
         headers={"Authorization": f"Bearer {access_token.token}"},
     )
+    if response.status_code == 404:
+        return None
     response.raise_for_status()
     return response.json()
 
@@ -125,6 +127,9 @@ def build_pdf_url(blob_name: str, page_number: int) -> str:
 
 def get_citation_metadata(doc_id: str) -> dict | None:
     document = load_search_document(doc_id)
+    if document is None:
+        return None
+
     blob_name = _normalize_source_file(document.get("source_file"))
     page_number = _normalize_page_number(document.get("page_number"))
 
@@ -141,4 +146,19 @@ def get_citation_metadata(doc_id: str) -> dict | None:
         "page_number": page_number,
         "snippet": str(document.get("content") or ""),
         "content_snippet": str(document.get("content") or ""),
+    }
+
+
+def resolve_document_link(doc_id: str) -> dict | None:
+    citation_metadata = get_citation_metadata(doc_id)
+    if citation_metadata is None:
+        return None
+
+    page_number = citation_metadata["page_number"]
+    return {
+        "url": build_pdf_url(
+            blob_name=citation_metadata["blob_name"],
+            page_number=page_number,
+        ),
+        "pageNumber": page_number,
     }

@@ -114,6 +114,7 @@ resource "azurerm_container_app" "main" {
     azurerm_role_assignment.openai_user,
     azurerm_role_assignment.search_reader,
     azurerm_role_assignment.storage_reader,
+    azurerm_role_assignment.storage_delegator,
     azurerm_role_assignment.acr_pull,
     azurerm_role_assignment.project_search_service_contributor,
     azurerm_role_assignment.project_search_index_contributor,

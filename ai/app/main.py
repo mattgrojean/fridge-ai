@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from auth import auth_middleware, get_current_user
 from chat import generate_response
 from config import ENTRA_API_SCOPE, ENTRA_CLIENT_ID, ENTRA_TENANT_ID
-from manuals import build_pdf_url
+from manuals import resolve_document_link
 from models import ChatRequest, ChatResponse
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -78,14 +78,13 @@ async def chat_endpoint(
 
 @app.get("/documents/resolve")
 async def resolve_document(
-    blob_name: str = Query(...),
-    page_number: int = Query(..., ge=1),
+    document_id: str = Query(..., min_length=1),
     user: dict = Depends(get_current_user),
 ) -> dict:
-    return {
-        "url": build_pdf_url(blob_name=blob_name, page_number=page_number),
-        "pageNumber": page_number,
-    }
+    resolved_document = resolve_document_link(document_id)
+    if resolved_document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return resolved_document
 
 
 @app.exception_handler(Exception)

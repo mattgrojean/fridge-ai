@@ -12,7 +12,13 @@ resource "azurerm_role_assignment" "search_reader" {
 
 resource "azurerm_role_assignment" "storage_reader" {
   scope                = azurerm_storage_account.main.id
-  role_definition_name = "Storage Blob Data Contributor"
+  role_definition_name = "Storage Blob Data Reader"
+  principal_id         = azurerm_user_assigned_identity.main.principal_id
+}
+
+resource "azurerm_role_assignment" "storage_delegator" {
+  scope                = azurerm_storage_account.main.id
+  role_definition_name = "Storage Blob Delegator"
   principal_id         = azurerm_user_assigned_identity.main.principal_id
 }
 
