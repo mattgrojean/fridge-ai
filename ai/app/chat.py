@@ -1,31 +1,30 @@
+import re
 from typing import List, Optional, Tuple
 
+from manuals import extract_search_document_id, get_citation_metadata
 from models import Citation
-from search import get_openai_client, get_or_create_agent
+
+CITATION_MARKER_RE = re.compile(r"\s*【[^】]+†source】")
+
+
+def _strip_citation_markers(answer_text: str) -> str:
+    return CITATION_MARKER_RE.sub("", answer_text or "").strip()
 
 
 def _parse_citations(output_items) -> List[Citation]:
     """Extract structured citations from Foundry response output annotations."""
     citations: List[Citation] = []
-    seen: set = set()
+    seen: set[str] = set()
 
     for item in output_items or []:
-        content_blocks = getattr(item, "content", None) or []
-        for block in content_blocks:
+        for block in getattr(item, "content", None) or []:
             for annotation in getattr(block, "annotations", None) or []:
-                url = getattr(annotation, "url", "") or ""
-                title = getattr(annotation, "title", "") or url
-                key = (title, url)
-                if key not in seen:
-                    seen.add(key)
-                    citations.append(
-                        Citation(
-                            source_file=title or "Unknown",
-                            page_number=0,
-                            content_snippet=url,
-                        )
-                    )
+                doc_id = extract_search_document_id(getattr(annotation, "url", ""))
+                if not doc_id or doc_id in seen:
+                    continue
 
+                seen.add(doc_id)
+                citations.append(Citation(**get_citation_metadata(doc_id)))
     return citations
 
 
@@ -38,6 +37,8 @@ def generate_response(
 
     Returns (answer_text, citations, foundry_conversation_id).
     """
+    from search import get_openai_client, get_or_create_agent
+
     agent = get_or_create_agent()
     openai_client = get_openai_client()
 
@@ -51,11 +52,10 @@ def generate_response(
         extra_body={"agent_reference": {"name": agent.name, "type": "agent_reference"}},
     )
 
-    answer_text = (response.output_text or "").strip()
+    answer_text = _strip_citation_markers((response.output_text or "").strip())
     if not answer_text:
         answer_text = "I couldn't find enough information in the manuals to answer that."
 
     citations = _parse_citations(getattr(response, "output", None))
 
     return answer_text, citations, foundry_conversation_id
-

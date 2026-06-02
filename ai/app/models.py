@@ -9,9 +9,11 @@ class ChatRequest(BaseModel):
 
 
 class Citation(BaseModel):
-    source_file: str
+    document_id: str
+    blob_name: str
+    display_title: str
     page_number: int
-    content_snippet: str
+    snippet: str
 
 
 class ChatResponse(BaseModel):
