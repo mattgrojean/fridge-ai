@@ -2,13 +2,15 @@
 
 ## Overview
 
-Appliance AI v2 is an internal chatbot for appliance repair technicians. It uses retrieval-augmented generation (RAG) over PDF service manuals so technicians can ask natural-language questions and receive grounded answers with manual context. The solution uses GPT-4.1-mini for chat responses and Azure AI Search hybrid retrieval to combine vector similarity, keyword matching, and semantic reranking.
+Appliance AI v2 is an internal chatbot for appliance repair technicians. It uses retrieval-augmented generation (RAG) over PDF service manuals so technicians can ask natural-language questions and receive grounded answers with manual context. The solution now uses Microsoft Foundry for chat orchestration and Foundry IQ for retrieval, with Azure AI Search underneath as the knowledge source.
 
 ## Architecture
 
 - **Azure Container Apps** hosts the FastAPI backend and static web UI.
-- **Azure OpenAI** provides GPT-4.1-mini for chat completions and `text-embedding-3-small` for document embeddings.
-- **Azure AI Search** stores manual chunks and supports hybrid retrieval with vector search, keyword search, and semantic ranking.
+- **Microsoft Foundry** hosts the project and agent that handle chat orchestration.
+- **Foundry IQ** provides the knowledge base and retrieval flow for service manuals.
+- **Azure AI Search** stores the manual index that backs the Foundry IQ knowledge base.
+- **Azure AI Services** provides the model deployments used by the Foundry agent.
 - **Azure Blob Storage** stores the source PDF manuals.
 - **Microsoft Entra ID** provides SSO authentication for technicians.
 - **Managed identity** is used end-to-end for Azure authentication so no API keys are required.
@@ -48,18 +50,32 @@ pip install -r ai\scripts\requirements.txt
 python ai\scripts\create_index.py --search-endpoint $searchEndpoint
 ```
 
-### 4. Upload PDFs and ingest
+### 4. Bootstrap Foundry IQ
+
+After `terraform apply` and after the search index exists, create the Foundry knowledge source, knowledge base, and project connection:
+
+```powershell
+$projectResourceId = terraform output -raw foundry_project_resource_id
+$aiServicesEndpoint = terraform output -raw ai_services_endpoint
+python ai\scripts\create_knowledge_base.py `
+  --search-endpoint $searchEndpoint `
+  --ai-services-endpoint $aiServicesEndpoint `
+  --project-resource-id $projectResourceId `
+  --model-deployment gpt-4-1-mini `
+  --model-name gpt-4.1-mini
+```
+
+### 5. Upload PDFs and ingest
 
 ```powershell
 Set-Location infra\terraform
-$openAiEndpoint = terraform output -raw openai_endpoint
 $storageAccount = terraform output -raw storage_account_name
 Set-Location ..\..
 az storage blob upload-batch -d manuals -s .\pdfs --account-name $storageAccount --auth-mode login
-python ai\scripts\ingest_manuals.py --search-endpoint $searchEndpoint --openai-endpoint $openAiEndpoint --storage-account $storageAccount
+python ai\scripts\ingest_manuals.py --search-endpoint $searchEndpoint --storage-account $storageAccount
 ```
 
-### 5. Build and deploy the app
+### 6. Build and deploy the app
 
 ```powershell
 Set-Location infra\terraform
@@ -74,9 +90,13 @@ docker push $registryServer/appliance-ai-chat:latest
 az containerapp update --name ca-appliance-ai-dev --resource-group $resourceGroup --image $registryServer/appliance-ai-chat:latest
 ```
 
-### 6. Update Entra ID redirect URI
+### 7. Update Entra ID redirect URI
 
 After the Container App is deployed, update the Entra ID app registration redirect URI with the live Container App URL.
+
+### 8. Restrict access to the allowed Entra group
+
+Terraform creates a security group named `Appliance AI Allowed Users (<env>)` and seeds it with your signed-in account. Add any other allowed users to that group, then redeploy so the app picks up the group ID in `ENTRA_ALLOWED_GROUP_ID`.
 
 ## Local Development
 
@@ -97,7 +117,7 @@ Approximate monthly development cost for a small shared environment:
 | Azure Container Apps | Low-volume app with 1 small revision | $20 |
 | Azure AI Search | Basic tier | $75 |
 | Azure Blob Storage | Small PDF corpus | $2 |
-| Azure OpenAI | Light dev/test usage | $5 - $15 |
+| Azure AI Services / Foundry | Light dev/test usage | $5 - $15 |
 | Azure Container Registry + Log Analytics | Minimal usage | $3 - $8 |
 | **Estimated total** |  | **$85 - $100** |
 
@@ -112,6 +132,7 @@ appliance-ai\v2
 │   │   └── static
 │   └── scripts
 │       ├── create_index.py
+│       ├── create_knowledge_base.py
 │       ├── ingest_manuals.py
 │       └── requirements.txt
 └── infra
@@ -134,7 +155,7 @@ python ai\scripts\ingest_manuals.py --search-endpoint $searchEndpoint --openai-e
 
 ### Update the model deployment
 
-- Update the Azure OpenAI deployment names or model configuration used by the application.
+- Update the Foundry agent or Azure AI Services model deployment used by the application.
 - Redeploy the Container App image after changing app configuration.
 - Re-run ingestion if you switch to a different embedding model or vector dimension.
 

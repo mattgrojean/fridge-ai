@@ -34,28 +34,23 @@ resource "azurerm_container_app" "main" {
       memory = "1Gi"
 
       env {
-        name  = "AZURE_OPENAI_ENDPOINT"
-        value = azurerm_cognitive_account.main.endpoint
+        name  = "AZURE_AI_PROJECT_ENDPOINT"
+        value = "https://${azurerm_cognitive_account.main.custom_subdomain_name}.services.ai.azure.com/api/projects/${azurerm_cognitive_account_project.main.name}"
       }
 
       env {
-        name  = "AZURE_SEARCH_ENDPOINT"
-        value = "https://${azurerm_search_service.main.name}.search.windows.net"
+        name  = "FOUNDRY_SEARCH_MCP_ENDPOINT"
+        value = "https://${azurerm_search_service.main.name}.search.windows.net/knowledgebases/manuals-kb/mcp?api-version=2025-11-01-preview"
       }
 
       env {
-        name  = "AZURE_SEARCH_INDEX_NAME"
-        value = "manuals-index"
+        name  = "FOUNDRY_AGENT_NAME"
+        value = "appliance-repair-agent"
       }
 
       env {
-        name  = "AZURE_OPENAI_CHAT_DEPLOYMENT"
-        value = azurerm_cognitive_deployment.chat.name
-      }
-
-      env {
-        name  = "AZURE_OPENAI_EMBEDDING_DEPLOYMENT"
-        value = azurerm_cognitive_deployment.embedding.name
+        name  = "FOUNDRY_KB_CONNECTION_NAME"
+        value = "manuals-kb-connection"
       }
 
       env {
@@ -69,8 +64,18 @@ resource "azurerm_container_app" "main" {
       }
 
       env {
+        name  = "ENTRA_API_SCOPE"
+        value = "api://${var.project_name}-${var.environment}/access_as_user"
+      }
+
+      env {
         name  = "ENTRA_TENANT_ID"
         value = data.azuread_client_config.current.tenant_id
+      }
+
+      env {
+        name  = "ENTRA_ALLOWED_GROUP_ID"
+        value = azuread_group.allowed_users.object_id
       }
 
       env {
@@ -94,6 +99,10 @@ resource "azurerm_container_app" "main" {
     azurerm_role_assignment.openai_user,
     azurerm_role_assignment.search_reader,
     azurerm_role_assignment.storage_reader,
-    azurerm_role_assignment.acr_pull
+    azurerm_role_assignment.acr_pull,
+    azurerm_role_assignment.project_search_service_contributor,
+    azurerm_role_assignment.project_search_index_contributor,
+    azurerm_role_assignment.search_cogsvcs_user,
+    azurerm_role_assignment.project_foundry_project_manager,
   ]
 }

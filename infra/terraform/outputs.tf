@@ -2,8 +2,16 @@ output "resource_group_name" {
   value = azurerm_resource_group.main.name
 }
 
-output "openai_endpoint" {
+output "ai_services_endpoint" {
   value = azurerm_cognitive_account.main.endpoint
+}
+
+output "foundry_project_endpoint" {
+  value = "https://${azurerm_cognitive_account.main.custom_subdomain_name}.services.ai.azure.com/api/projects/${azurerm_cognitive_account_project.main.name}"
+}
+
+output "foundry_project_resource_id" {
+  value = azurerm_cognitive_account_project.main.id
 }
 
 output "search_endpoint" {
@@ -32,6 +40,14 @@ output "entra_client_id" {
 
 output "entra_tenant_id" {
   value = data.azuread_client_config.current.tenant_id
+}
+
+output "entra_allowed_group_id" {
+  value = azuread_group.allowed_users.object_id
+}
+
+output "entra_allowed_group_name" {
+  value = azuread_group.allowed_users.display_name
 }
 
 output "managed_identity_client_id" {

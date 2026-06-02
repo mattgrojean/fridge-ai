@@ -8,16 +8,16 @@ def _get_required(name: str) -> str:
     return value
 
 
-AZURE_OPENAI_ENDPOINT = _get_required("AZURE_OPENAI_ENDPOINT")
-AZURE_SEARCH_ENDPOINT = _get_required("AZURE_SEARCH_ENDPOINT")
-AZURE_SEARCH_INDEX_NAME = os.environ.get("AZURE_SEARCH_INDEX_NAME", "manuals-index")
-AZURE_OPENAI_CHAT_DEPLOYMENT = os.environ.get("AZURE_OPENAI_CHAT_DEPLOYMENT", "gpt-4-1-mini")
-AZURE_OPENAI_EMBEDDING_DEPLOYMENT = os.environ.get(
-    "AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-small"
-)
+AZURE_AI_PROJECT_ENDPOINT = _get_required("AZURE_AI_PROJECT_ENDPOINT")
+FOUNDRY_SEARCH_MCP_ENDPOINT = _get_required("FOUNDRY_SEARCH_MCP_ENDPOINT")
+FOUNDRY_AGENT_NAME = os.environ.get("FOUNDRY_AGENT_NAME", "appliance-repair-agent")
+FOUNDRY_KB_CONNECTION_NAME = os.environ.get("FOUNDRY_KB_CONNECTION_NAME", "manuals-kb-connection")
+FOUNDRY_MODEL_DEPLOYMENT = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-5.4-mini")
 AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID", "")
 ENTRA_CLIENT_ID = _get_required("ENTRA_CLIENT_ID")
+ENTRA_API_SCOPE = os.environ.get("ENTRA_API_SCOPE", "")
 ENTRA_TENANT_ID = _get_required("ENTRA_TENANT_ID")
+ENTRA_ALLOWED_GROUP_ID = os.environ.get("ENTRA_ALLOWED_GROUP_ID", "")
 APPLICATIONINSIGHTS_CONNECTION_STRING = os.environ.get(
     "APPLICATIONINSIGHTS_CONNECTION_STRING", ""
 )

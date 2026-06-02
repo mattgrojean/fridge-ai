@@ -28,3 +28,4 @@ Thumbs.db
 
 # Playwright MCP
 .playwright-mcp/
+.venv-searchfix

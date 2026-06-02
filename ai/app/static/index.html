@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Appliance AI</title>
-    <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+    <script src="/static/msal-browser.min.js"></script>
     <style>
         :root {
             color-scheme: light;
@@ -655,7 +655,7 @@
                 return "";
             }
 
-            const scopes = [`api://${state.authConfig.clientId}/access_as_user`];
+            const scopes = [state.authConfig.apiScope];
             try {
                 const response = await state.msalInstance.acquireTokenSilent({
                     scopes,
@@ -693,7 +693,7 @@
         }
 
         async function login() {
-            const scopes = [`api://${state.authConfig.clientId}/access_as_user`];
+            const scopes = [state.authConfig.apiScope];
             await state.msalInstance.loginRedirect({ scopes });
         }
 
@@ -775,7 +775,7 @@
                 auth: {
                     clientId: state.authConfig.clientId,
                     authority: `https://login.microsoftonline.com/${state.authConfig.tenantId}`,
-                    redirectUri: window.location.origin
+                    redirectUri: `${window.location.origin}/`
                 },
                 cache: {
                     cacheLocation: "sessionStorage"

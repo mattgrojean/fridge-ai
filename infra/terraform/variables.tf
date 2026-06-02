@@ -6,7 +6,7 @@ variable "subscription_id" {
 variable "location" {
   description = "Azure region for all regional resources."
   type        = string
-  default     = "East US 2"
+  default     = "Central US"
 }
 
 variable "environment" {
@@ -31,4 +31,10 @@ variable "search_sku" {
   description = "Azure AI Search SKU."
   type        = string
   default     = "basic"
+}
+
+variable "foundry_project_name" {
+  description = "Name of the Azure AI Foundry project resource."
+  type        = string
+  default     = "appliance-ai-project"
 }

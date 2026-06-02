@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, Optional
 import uuid
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from auth import auth_middleware, get_current_user
 from chat import generate_response
-from config import ENTRA_CLIENT_ID, ENTRA_TENANT_ID
+from config import ENTRA_API_SCOPE, ENTRA_CLIENT_ID, ENTRA_TENANT_ID
 from models import ChatRequest, ChatResponse
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -26,7 +26,8 @@ app.add_middleware(
 app.middleware("http")(auth_middleware)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-conversation_store: Dict[str, List[dict]] = {}
+# Maps app-visible conversation UUID → Foundry conversation ID
+conversation_store: Dict[str, Optional[str]] = {}
 
 
 @app.get("/", include_in_schema=False)
@@ -44,6 +45,7 @@ async def auth_config() -> dict:
     return {
         "clientId": ENTRA_CLIENT_ID,
         "tenantId": ENTRA_TENANT_ID,
+        "apiScope": ENTRA_API_SCOPE,
         "redirectUri": "/",
     }
 
@@ -55,18 +57,9 @@ async def chat_endpoint(
 ) -> ChatResponse:
     try:
         conversation_id = payload.conversation_id or str(uuid.uuid4())
-        history = conversation_store.setdefault(conversation_id, [])
-        answer, citations = generate_response(payload.message, history)
-
-        history.append(
-            {
-                "role": "user",
-                "content": payload.message,
-                "user": user.get("email") or user.get("name"),
-            }
-        )
-        history.append({"role": "assistant", "content": answer})
-        conversation_store[conversation_id] = history[-20:]
+        foundry_conv_id = conversation_store.get(conversation_id)
+        answer, citations, foundry_conv_id = generate_response(payload.message, foundry_conv_id)
+        conversation_store[conversation_id] = foundry_conv_id
 
         return ChatResponse(
             answer=answer,

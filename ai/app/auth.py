@@ -8,11 +8,12 @@ from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from jwt.algorithms import RSAAlgorithm
 
-from config import ENTRA_CLIENT_ID, ENTRA_TENANT_ID
+from config import ENTRA_ALLOWED_GROUP_ID, ENTRA_CLIENT_ID, ENTRA_TENANT_ID
 
 JWKS_URL = f"https://login.microsoftonline.com/{ENTRA_TENANT_ID}/discovery/v2.0/keys"
 ISSUER = f"https://login.microsoftonline.com/{ENTRA_TENANT_ID}/v2.0"
 _JWKS_CACHE: dict[str, Any] = {"keys": None, "expires_at": 0.0}
+_ALLOWED_GROUP_IDS = {group_id.strip() for group_id in ENTRA_ALLOWED_GROUP_ID.split(",") if group_id.strip()}
 
 
 def _mock_user() -> Dict[str, str]:
@@ -85,6 +86,33 @@ def _claims_to_user(claims: Dict[str, Any]) -> Dict[str, str]:
     return {"name": name, "email": email, "oid": claims.get("oid", "")}
 
 
+def _require_allowed_group(claims: Dict[str, Any]) -> None:
+    if ENTRA_CLIENT_ID == "dev-skip-auth":
+        return
+
+    if not _ALLOWED_GROUP_IDS:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Allowed Entra group is not configured.",
+        )
+
+    token_groups = claims.get("groups")
+    if isinstance(token_groups, str):
+        token_groups = [token_groups]
+
+    if not token_groups:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Your token did not include an allowed Entra group.",
+        )
+
+    if not set(token_groups).intersection(_ALLOWED_GROUP_IDS):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Your account is not in the allowed Entra group.",
+        )
+
+
 async def validate_token(token: str) -> Dict[str, Any]:
     if ENTRA_CLIENT_ID == "dev-skip-auth":
         return {
@@ -126,6 +154,7 @@ async def get_current_user(request: Request) -> Dict[str, str]:
 
     token = _extract_bearer_token(request.headers.get("Authorization"))
     claims = await validate_token(token)
+    _require_allowed_group(claims)
     user = _claims_to_user(claims)
     request.state.user = user
     return user
@@ -145,6 +174,7 @@ async def auth_middleware(request: Request, call_next):
         try:
             token = _extract_bearer_token(authorization_header)
             claims = await validate_token(token)
+            _require_allowed_group(claims)
             request.state.user = _claims_to_user(claims)
         except HTTPException as exc:
             return JSONResponse(
