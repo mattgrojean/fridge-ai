@@ -167,6 +167,23 @@
             background: linear-gradient(180deg, #fbfdff 0%, #f3f6fb 100%);
         }
 
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            min-height: 100dvh;
+        }
+
+        .workspace.has-preview {
+            grid-template-columns: minmax(0, 1fr) minmax(360px, 44%);
+        }
+
+        .chat-column {
+            min-width: 0;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
         .topbar {
             display: flex;
             align-items: center;
@@ -331,6 +348,50 @@
             white-space: pre-wrap;
         }
 
+        .citation-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0 14px 14px;
+        }
+
+        .citation-action {
+            min-height: 36px;
+            padding: 8px 12px;
+        }
+
+        .preview-pane {
+            border-left: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .preview-pane-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #previewTitle {
+            min-width: 0;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .preview-frame {
+            flex: 1;
+            width: 100%;
+            border: 0;
+            background: #fff;
+        }
+
         .loading-bubble {
             display: inline-flex;
             align-items: center;
@@ -463,6 +524,16 @@
                 padding: 0 14px;
             }
         }
+
+        @media (max-width: 960px) {
+            .workspace.has-preview {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .preview-pane {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -478,25 +549,37 @@
             </section>
 
             <section id="chatView" class="chat-view hidden" data-testid="chat-view">
-                <header class="topbar">
-                    <div class="brand">
-                        <h2>Appliance AI</h2>
-                        <p>RAG assistant for appliance repair technicians</p>
-                    </div>
-                    <div class="topbar-actions">
-                        <div id="userDisplay" class="user-pill" data-testid="user-display"></div>
-                        <button id="logoutButton" class="secondary-button" data-testid="logout-button">Logout</button>
-                    </div>
-                </header>
+                <div id="workspace" class="workspace">
+                    <div class="chat-column">
+                        <header class="topbar">
+                            <div class="brand">
+                                <h2>Appliance AI</h2>
+                                <p>RAG assistant for appliance repair technicians</p>
+                            </div>
+                            <div class="topbar-actions">
+                                <div id="userDisplay" class="user-pill" data-testid="user-display"></div>
+                                <button id="logoutButton" class="secondary-button" data-testid="logout-button">Logout</button>
+                            </div>
+                        </header>
 
-                <main id="messageList" class="message-list" data-testid="message-list"></main>
+                        <main id="messageList" class="message-list" data-testid="message-list"></main>
 
-                <div class="composer-wrap">
-                    <div class="composer">
-                        <textarea id="messageInput" data-testid="message-input" rows="1" placeholder="Ask about diagnostics, parts, procedures, or troubleshooting steps..."></textarea>
-                        <button id="sendButton" class="icon-button" data-testid="send-button">Send</button>
+                        <div class="composer-wrap">
+                            <div class="composer">
+                                <textarea id="messageInput" data-testid="message-input" rows="1" placeholder="Ask about diagnostics, parts, procedures, or troubleshooting steps..."></textarea>
+                                <button id="sendButton" class="icon-button" data-testid="send-button">Send</button>
+                            </div>
+                            <div class="footer-note">Use Enter to send • Shift+Enter for a new line</div>
+                        </div>
                     </div>
-                    <div class="footer-note">Use Enter to send • Shift+Enter for a new line</div>
+
+                    <aside id="previewPane" class="preview-pane hidden" data-testid="preview-pane">
+                        <div class="preview-pane-header">
+                            <div id="previewTitle"></div>
+                            <button id="closePreviewButton" class="secondary-button">Close</button>
+                        </div>
+                        <iframe id="previewFrame" class="preview-frame" title="Manual preview"></iframe>
+                    </aside>
                 </div>
             </section>
         </div>
@@ -510,25 +593,57 @@
             accessToken: "",
             devMode: false,
             conversationId: sessionStorage.getItem("conversation_id") || null,
-            loadingElement: null
+            loadingElement: null,
+            activeDocument: null
         };
 
         const elements = {
             loginView: document.getElementById("loginView"),
             chatView: document.getElementById("chatView"),
+            workspace: document.getElementById("workspace"),
             loginButton: document.getElementById("loginButton"),
             logoutButton: document.getElementById("logoutButton"),
             loginMessage: document.getElementById("loginMessage"),
             userDisplay: document.getElementById("userDisplay"),
             messageList: document.getElementById("messageList"),
             messageInput: document.getElementById("messageInput"),
-            sendButton: document.getElementById("sendButton")
+            sendButton: document.getElementById("sendButton"),
+            previewPane: document.getElementById("previewPane"),
+            previewTitle: document.getElementById("previewTitle"),
+            previewFrame: document.getElementById("previewFrame"),
+            closePreviewButton: document.getElementById("closePreviewButton")
         };
+
+        function hasPreviewOpen() {
+            return Boolean(state.activeDocument && state.activeDocument.url);
+        }
+
+        function renderPreviewPane() {
+            const previewOpen = hasPreviewOpen();
+            elements.previewTitle.textContent = previewOpen ? state.activeDocument.title : "";
+            elements.previewPane.classList.toggle("hidden", !previewOpen);
+            elements.workspace.classList.toggle("has-preview", previewOpen);
+            if (previewOpen) {
+                elements.previewFrame.src = state.activeDocument.url;
+                return;
+            }
+            elements.previewFrame.removeAttribute("src");
+        }
+
+        function closePreview() {
+            state.activeDocument = null;
+            renderPreviewPane();
+        }
+
+        function supportsSplitPreview() {
+            return window.matchMedia("(min-width: 961px)").matches;
+        }
 
         function showLogin(message) {
             if (message) {
                 elements.loginMessage.textContent = message;
             }
+            closePreview();
             elements.chatView.classList.add("hidden");
             elements.loginView.classList.remove("hidden");
         }
@@ -536,6 +651,7 @@
         function showChat() {
             elements.loginView.classList.add("hidden");
             elements.chatView.classList.remove("hidden");
+            renderPreviewPane();
             elements.messageInput.focus();
         }
 
@@ -587,14 +703,45 @@
                     card.dataset.testid = `citation-card-${index}`;
 
                     const summary = document.createElement("summary");
-                    summary.textContent = `${citation.source_file} • Page ${citation.page_number}`;
+                    summary.textContent = `${citation.display_title} • Page ${citation.page_number}`;
 
                     const body = document.createElement("div");
                     body.className = "citation-body";
-                    body.textContent = citation.content_snippet;
+                    body.textContent = citation.snippet;
+
+                    const actions = document.createElement("div");
+                    actions.className = "citation-actions";
+
+                    const previewButton = document.createElement("button");
+                    previewButton.className = "secondary-button citation-action";
+                    previewButton.textContent = "Preview";
+                    previewButton.addEventListener("click", async (event) => {
+                        event.preventDefault();
+                        try {
+                            await previewCitation(citation);
+                        } catch (error) {
+                            showErrorMessage(error.message || "Unable to preview citation.");
+                        }
+                    });
+
+                    const openButton = document.createElement("button");
+                    openButton.className = "secondary-button citation-action";
+                    openButton.textContent = "Open in new tab";
+                    openButton.addEventListener("click", async (event) => {
+                        event.preventDefault();
+                        try {
+                            await openCitationInNewTab(citation);
+                        } catch (error) {
+                            showErrorMessage(error.message || "Unable to open citation.");
+                        }
+                    });
+
+                    actions.appendChild(previewButton);
+                    actions.appendChild(openButton);
 
                     card.appendChild(summary);
                     card.appendChild(body);
+                    card.appendChild(actions);
                     citationList.appendChild(card);
                 });
                 bubble.appendChild(citationList);
@@ -648,6 +795,44 @@
         function setComposerState(disabled) {
             elements.messageInput.disabled = disabled;
             elements.sendButton.disabled = disabled;
+        }
+
+        async function resolveCitationDocument(citation) {
+            const token = await getAccessToken();
+            const headers = {};
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+
+            const params = new URLSearchParams({
+                document_id: citation.document_id
+            });
+
+            const response = await fetch(`/documents/resolve?${params.toString()}`, { headers });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.detail || "Unable to resolve document.");
+            }
+            return payload;
+        }
+
+        async function previewCitation(citation) {
+            const payload = await resolveCitationDocument(citation);
+            if (!supportsSplitPreview()) {
+                window.open(payload.url, "_blank", "noopener,noreferrer");
+                return;
+            }
+
+            state.activeDocument = {
+                title: `${citation.display_title} • Page ${citation.page_number}`,
+                url: payload.url
+            };
+            renderPreviewPane();
+        }
+
+        async function openCitationInNewTab(citation) {
+            const payload = await resolveCitationDocument(citation);
+            window.open(payload.url, "_blank", "noopener,noreferrer");
         }
 
         async function getAccessToken() {
@@ -815,6 +1000,8 @@
             });
         });
 
+        elements.closePreviewButton.addEventListener("click", closePreview);
+
         elements.sendButton.addEventListener("click", () => {
             sendMessage();
         });
@@ -828,6 +1015,7 @@
         });
 
         autoResizeTextarea();
+        renderPreviewPane();
         initializeAuth().catch((error) => {
             showLogin(`Startup failed: ${error.message || error}`);
         });
