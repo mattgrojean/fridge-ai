@@ -12,8 +12,10 @@ class Citation(BaseModel):
     document_id: str
     blob_name: str
     display_title: str
+    source_file: str
     page_number: int
     snippet: str
+    content_snippet: str
 
 
 class ChatResponse(BaseModel):

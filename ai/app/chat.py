@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import List, Optional, Tuple
 
@@ -5,6 +6,7 @@ from manuals import extract_search_document_id, get_citation_metadata
 from models import Citation
 
 CITATION_MARKER_RE = re.compile(r"\s*【[^】]+†source】")
+logger = logging.getLogger(__name__)
 
 
 def _strip_citation_markers(answer_text: str) -> str:
@@ -24,7 +26,12 @@ def _parse_citations(output_items) -> List[Citation]:
                     continue
 
                 seen.add(doc_id)
-                citations.append(Citation(**get_citation_metadata(doc_id)))
+                try:
+                    citation_metadata = get_citation_metadata(doc_id)
+                    if citation_metadata:
+                        citations.append(Citation(**citation_metadata))
+                except Exception:
+                    logger.warning("Skipping citation hydration for document %s", doc_id, exc_info=True)
     return citations
 
 

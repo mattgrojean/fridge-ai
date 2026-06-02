@@ -2,10 +2,14 @@ import os
 import re
 from functools import lru_cache
 from pathlib import PurePosixPath
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
+
+import httpx
 
 SEARCH_DOC_URL_RE = re.compile(r"^mcp://searchindex/(?P<doc_id>[0-9a-f]{64})(?:[/?#].*)?$", re.IGNORECASE)
 DEFAULT_SEARCH_INDEX_NAME = "manuals-index"
+SEARCH_API_VERSION = "2024-07-01"
+SEARCH_TOKEN_SCOPE = "https://search.azure.com/.default"
 
 
 def extract_search_document_id(annotation_url: str) -> str | None:
@@ -21,36 +25,84 @@ def _derive_search_endpoint(foundry_search_mcp_endpoint: str) -> str:
 
 
 @lru_cache(maxsize=1)
-def get_search_client():
+def get_search_credential():
     from azure.identity import DefaultAzureCredential
-    from azure.search.documents import SearchClient
 
-    from config import AZURE_CLIENT_ID, FOUNDRY_SEARCH_MCP_ENDPOINT
+    from config import AZURE_CLIENT_ID
 
-    credential = DefaultAzureCredential(managed_identity_client_id=AZURE_CLIENT_ID or None)
+    return DefaultAzureCredential(managed_identity_client_id=AZURE_CLIENT_ID or None)
+
+
+@lru_cache(maxsize=1)
+def get_search_http_client() -> httpx.Client:
+    return httpx.Client(timeout=httpx.Timeout(10.0, connect=5.0))
+
+
+def _get_search_service_config() -> tuple[str, str]:
+    from config import FOUNDRY_SEARCH_MCP_ENDPOINT
+
     endpoint = os.environ.get("AZURE_SEARCH_ENDPOINT") or _derive_search_endpoint(FOUNDRY_SEARCH_MCP_ENDPOINT)
     index_name = os.environ.get("AZURE_SEARCH_INDEX_NAME", DEFAULT_SEARCH_INDEX_NAME)
-    return SearchClient(endpoint=endpoint, index_name=index_name, credential=credential)
+    return endpoint.rstrip("/"), index_name
+
+
+def _build_lookup_url(endpoint: str, index_name: str, doc_id: str) -> str:
+    quoted_index_name = quote(index_name, safe="")
+    quoted_doc_id = quote(doc_id, safe="")
+    return f"{endpoint}/indexes('{quoted_index_name}')/docs('{quoted_doc_id}')"
 
 
 def load_search_document(doc_id: str) -> dict:
-    return dict(get_search_client().get_document(key=doc_id))
+    endpoint, index_name = _get_search_service_config()
+    access_token = get_search_credential().get_token(SEARCH_TOKEN_SCOPE)
+    response = get_search_http_client().get(
+        _build_lookup_url(endpoint, index_name, doc_id),
+        params={
+            "api-version": SEARCH_API_VERSION,
+            "$select": "source_file,page_number,content",
+        },
+        headers={"Authorization": f"Bearer {access_token.token}"},
+    )
+    response.raise_for_status()
+    return response.json()
 
 
-def get_citation_metadata(doc_id: str) -> dict:
-    document = load_search_document(doc_id)
-    blob_name = str(document.get("source_file") or document.get("title") or doc_id)
-    display_title = PurePosixPath(blob_name).name or blob_name
+def _normalize_source_file(source_file) -> str | None:
+    if source_file is None:
+        return None
+
+    normalized = str(source_file).strip()
+    return normalized or None
+
+
+def _normalize_page_number(page_number) -> int | None:
+    if isinstance(page_number, bool):
+        return None
 
     try:
-        page_number = int(document.get("page_number") or 0)
+        normalized = int(page_number)
     except (TypeError, ValueError):
-        page_number = 0
+        return None
+
+    return normalized if normalized >= 1 else None
+
+
+def get_citation_metadata(doc_id: str) -> dict | None:
+    document = load_search_document(doc_id)
+    blob_name = _normalize_source_file(document.get("source_file"))
+    page_number = _normalize_page_number(document.get("page_number"))
+
+    if not blob_name or page_number is None:
+        return None
+
+    display_title = PurePosixPath(blob_name).name or blob_name
 
     return {
         "document_id": doc_id,
         "blob_name": blob_name,
         "display_title": display_title,
+        "source_file": display_title,
         "page_number": page_number,
         "snippet": str(document.get("content") or ""),
+        "content_snippet": str(document.get("content") or ""),
     }
