@@ -1,13 +1,24 @@
 import os
 import re
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import PurePosixPath
 from urllib.parse import quote, urlparse
 
 import httpx
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobSasPermissions, BlobServiceClient, generate_blob_sas
+
+from config import (
+    AZURE_CLIENT_ID,
+    AZURE_STORAGE_ACCOUNT_NAME,
+    AZURE_STORAGE_CONTAINER_NAME,
+    PDF_LINK_TTL_MINUTES,
+    SEARCH_ENDPOINT,
+    SEARCH_INDEX_NAME,
+)
 
 SEARCH_DOC_URL_RE = re.compile(r"^mcp://searchindex/(?P<doc_id>[0-9a-f]{64})(?:[/?#].*)?$", re.IGNORECASE)
-DEFAULT_SEARCH_INDEX_NAME = "manuals-index"
 SEARCH_API_VERSION = "2024-07-01"
 SEARCH_TOKEN_SCOPE = "https://search.azure.com/.default"
 
@@ -26,11 +37,16 @@ def _derive_search_endpoint(foundry_search_mcp_endpoint: str) -> str:
 
 @lru_cache(maxsize=1)
 def get_search_credential():
-    from azure.identity import DefaultAzureCredential
-
-    from config import AZURE_CLIENT_ID
-
     return DefaultAzureCredential(managed_identity_client_id=AZURE_CLIENT_ID or None)
+
+
+@lru_cache(maxsize=1)
+def get_blob_service_client() -> BlobServiceClient:
+    credential = DefaultAzureCredential(managed_identity_client_id=AZURE_CLIENT_ID or None)
+    return BlobServiceClient(
+        account_url=f"https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net",
+        credential=credential,
+    )
 
 
 @lru_cache(maxsize=1)
@@ -39,11 +55,8 @@ def get_search_http_client() -> httpx.Client:
 
 
 def _get_search_service_config() -> tuple[str, str]:
-    from config import FOUNDRY_SEARCH_MCP_ENDPOINT
-
-    endpoint = os.environ.get("AZURE_SEARCH_ENDPOINT") or _derive_search_endpoint(FOUNDRY_SEARCH_MCP_ENDPOINT)
-    index_name = os.environ.get("AZURE_SEARCH_INDEX_NAME", DEFAULT_SEARCH_INDEX_NAME)
-    return endpoint.rstrip("/"), index_name
+    endpoint = SEARCH_ENDPOINT or _derive_search_endpoint(os.environ.get("FOUNDRY_SEARCH_MCP_ENDPOINT", ""))
+    return endpoint.rstrip("/"), SEARCH_INDEX_NAME
 
 
 def _build_lookup_url(endpoint: str, index_name: str, doc_id: str) -> str:
@@ -85,6 +98,29 @@ def _normalize_page_number(page_number) -> int | None:
         return None
 
     return normalized if normalized >= 1 else None
+
+
+def build_pdf_url(blob_name: str, page_number: int) -> str:
+    blob_service_client = get_blob_service_client()
+    now = datetime.now(timezone.utc)
+    delegation_key = blob_service_client.get_user_delegation_key(
+        key_start_time=now - timedelta(minutes=5),
+        key_expiry_time=now + timedelta(minutes=PDF_LINK_TTL_MINUTES),
+    )
+    sas_token = generate_blob_sas(
+        account_name=AZURE_STORAGE_ACCOUNT_NAME,
+        container_name=AZURE_STORAGE_CONTAINER_NAME,
+        blob_name=blob_name,
+        user_delegation_key=delegation_key,
+        permission=BlobSasPermissions(read=True),
+        expiry=now + timedelta(minutes=PDF_LINK_TTL_MINUTES),
+        start=now - timedelta(minutes=5),
+    )
+    encoded_blob_name = "/".join(quote(part) for part in blob_name.split("/"))
+    return (
+        f"https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/"
+        f"{AZURE_STORAGE_CONTAINER_NAME}/{encoded_blob_name}?{sas_token}#page={page_number}"
+    )
 
 
 def get_citation_metadata(doc_id: str) -> dict | None:

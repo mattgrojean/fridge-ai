@@ -59,6 +59,21 @@ resource "azurerm_container_app" "main" {
       }
 
       env {
+        name  = "AZURE_STORAGE_ACCOUNT_NAME"
+        value = azurerm_storage_account.main.name
+      }
+
+      env {
+        name  = "AZURE_STORAGE_CONTAINER_NAME"
+        value = azurerm_storage_container.manuals.name
+      }
+
+      env {
+        name  = "SEARCH_INDEX_NAME"
+        value = "manuals-index"
+      }
+
+      env {
         name  = "ENTRA_CLIENT_ID"
         value = azuread_application.main.client_id
       }
