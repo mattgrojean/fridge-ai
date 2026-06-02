@@ -79,10 +79,12 @@ python ai\scripts\ingest_manuals.py --search-endpoint $searchEndpoint --storage-
 
 ```powershell
 Set-Location infra\terraform
+terraform apply -var-file="environments\dev\dev.tfvars"
 $registryServer = terraform output -raw container_registry_login_server
 $resourceGroup = terraform output -raw resource_group_name
 $registryName = $registryServer.Split('.')[0]
 Set-Location ..\..
+pip install -r ai\app\requirements.txt
 az acr login --name $registryName
 docker build -t appliance-ai-chat:latest .\ai\app
 docker tag appliance-ai-chat:latest $registryServer/appliance-ai-chat:latest
@@ -143,6 +145,52 @@ appliance-ai\v2
 
 ## Day 2 Operations
 
+## Deployment Validation
+
+### Pre-deploy citation/manual smoke checks
+
+Before this feature is deployed, these checks will fail or are not yet possible:
+
+```powershell
+# 1. Citation cards should no longer show mcp://searchindex URLs
+# 2. /documents/resolve should require auth and return a short-lived URL
+# 3. Desktop preview should keep chat visible
+# 4. Small-screen fallback should still allow opening the document
+```
+
+Confirm the current Container App revision is still missing the preview-related configuration before rollout:
+
+```powershell
+az containerapp show -g rg-appliance-ai-dev -n ca-appliance-ai-dev --query "properties.template.containers[0].env[].name" -o tsv
+```
+
+Expected before deploy: `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_STORAGE_CONTAINER_NAME`, and `SEARCH_INDEX_NAME` are not present.
+
+### Post-deploy validation
+
+After applying Terraform and pushing the updated app image, validate the infrastructure and live app:
+
+```powershell
+Set-Location infra\terraform
+terraform validate
+Set-Location ..\..
+Invoke-WebRequest -UseBasicParsing https://ca-appliance-ai-dev.nicesand-7a91f96a.centralus.azurecontainerapps.io/health
+```
+
+Expected results:
+
+- `terraform validate` returns `Success! The configuration is valid.`
+- `/health` returns `200 OK`
+
+Manual browser validation:
+
+1. Sign in as an allowed user.
+2. Ask a question with a known manual-backed answer.
+3. Confirm citation labels show the PDF filename and actual page number.
+4. Confirm **Preview** opens the PDF in the right pane on desktop.
+5. Confirm **Open in new tab** opens the same document without losing the chat tab.
+6. Confirm the raw `【...†source】` marker no longer appears in the answer body.
+
 ### Add new manuals
 
 1. Upload new PDF files into the `manuals` blob container.
@@ -152,6 +200,12 @@ appliance-ai\v2
 az storage blob upload-batch -d manuals -s .\pdfs --account-name $storageAccount --auth-mode login
 python ai\scripts\ingest_manuals.py --search-endpoint $searchEndpoint --openai-endpoint $openAiEndpoint --storage-account $storageAccount
 ```
+
+### Use citations to open manuals
+
+- Each answer citation offers **Preview** and **Open in new tab**.
+- Preview keeps chat visible on desktop while loading the cited PDF page.
+- The backend issues short-lived document links using managed identity; no permanent blob URLs are exposed to the browser.
 
 ### Update the model deployment
 
