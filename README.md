@@ -164,7 +164,7 @@ Confirm the current Container App revision is still missing the preview-related 
 az containerapp show -g rg-appliance-ai-dev -n ca-appliance-ai-dev --query "properties.template.containers[0].env[].name" -o tsv
 ```
 
-Expected before deploy: `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_STORAGE_CONTAINER_NAME`, and `SEARCH_INDEX_NAME` are not present.
+Observed before deploy: `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_STORAGE_CONTAINER_NAME`, and `SEARCH_INDEX_NAME` were absent from the current live Container App env list.
 
 ### Post-deploy validation
 
@@ -177,10 +177,10 @@ Set-Location ..\..
 Invoke-WebRequest -UseBasicParsing https://ca-appliance-ai-dev.nicesand-7a91f96a.centralus.azurecontainerapps.io/health
 ```
 
-Expected results:
+Observed/recorded results:
 
-- `terraform validate` returns `Success! The configuration is valid.`
-- `/health` returns `200 OK`
+- `terraform validate` returned `Success! The configuration is valid.`
+- `/health` returned `200 OK` with `{"status":"healthy"}`
 
 Manual browser validation:
 
