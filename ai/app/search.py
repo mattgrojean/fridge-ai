@@ -32,10 +32,10 @@ AGENT_INSTRUCTIONS = (
 _DEFINITION_HASH_KEY = "definition_hash"
 
 
-def _build_definition_hash() -> str:
+def _build_definition_hash(model: str | None = None) -> str:
     """SHA-256 of the canonical agent definition so we can detect changes."""
     canonical = {
-        "model": FOUNDRY_MODEL_DEPLOYMENT,
+        "model": model or FOUNDRY_MODEL_DEPLOYMENT,
         "instructions": AGENT_INSTRUCTIONS,
         "mcp_endpoint": FOUNDRY_SEARCH_MCP_ENDPOINT,
         "kb_connection": FOUNDRY_KB_CONNECTION_NAME,
@@ -55,8 +55,8 @@ def get_openai_client():
     return get_project_client().get_openai_client()
 
 
-@lru_cache(maxsize=1)
-def get_or_create_agent():
+@lru_cache(maxsize=8)
+def get_or_create_agent(model: str | None = None):
     """Return the agent version matching the current definition.
 
     On each deploy the function hashes the agent definition (instructions,
@@ -64,9 +64,13 @@ def get_or_create_agent():
     hash it is reused so that process restarts do not create duplicate
     versions.  When the definition changes a fresh version is created
     automatically.
+
+    The optional *model* parameter allows per-request model selection;
+    each distinct model gets its own cached agent version.
     """
     client = get_project_client()
-    current_hash = _build_definition_hash()
+    selected_model = model or FOUNDRY_MODEL_DEPLOYMENT
+    current_hash = _build_definition_hash(selected_model)
 
     # Check whether the latest version already matches the current definition
     existing = list(client.agents.list_versions(
@@ -93,7 +97,7 @@ def get_or_create_agent():
     return client.agents.create_version(
         agent_name=FOUNDRY_AGENT_NAME,
         definition=PromptAgentDefinition(
-            model=FOUNDRY_MODEL_DEPLOYMENT,
+            model=selected_model,
             instructions=AGENT_INSTRUCTIONS,
             tools=[mcp_tool],
         ),

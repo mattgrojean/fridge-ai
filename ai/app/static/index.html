@@ -17,18 +17,18 @@
         :root {
             color-scheme: dark;
             --bg: #1a1c1e;
-            --surface: #222528;
+            --surface: #242629;
             --surface-muted: #1e2023;
-            --border: #333639;
-            --text: #e6e3dc;
-            --text-muted: #8b8680;
-            --accent: #f59e0b;
-            --accent-dim: #b37400;
-            --bot-surface: #212427;
-            --user-surface: #2d2416;
+            --border: #3c4043;
+            --text: #e8eaed;
+            --text-muted: #9aa0a6;
+            --accent: #5c9ce6;
+            --accent-dim: #3d7bc4;
+            --bot-surface: #1e2226;
+            --user-surface: #1c2533;
             --error: #ef4444;
             --error-bg: #2c1a1a;
-            --shadow: 0 4px 24px rgba(0,0,0,0.5);
+            --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25);
             --font-mono: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
             --font-body: "Work Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
         }
@@ -36,19 +36,19 @@
         @media (prefers-color-scheme: light) {
             :root {
                 color-scheme: light;
-                --bg: #f0efe9;
+                --bg: #fafafa;
                 --surface: #ffffff;
-                --surface-muted: #f5f4f0;
-                --border: #d9d6cf;
-                --text: #1a1c1e;
-                --text-muted: #6b6560;
-                --accent: #c27a00;
-                --accent-dim: #8a5700;
-                --bot-surface: #f5f4f0;
-                --user-surface: #fff8ed;
+                --surface-muted: #f5f5f5;
+                --border: #dadce0;
+                --text: #202124;
+                --text-muted: #5f6368;
+                --accent: #1a73e8;
+                --accent-dim: #1557b0;
+                --bot-surface: #f1f3f4;
+                --user-surface: #e8f0fe;
                 --error: #c92a2a;
-                --error-bg: #fff5f5;
-                --shadow: 0 2px 16px rgba(0,0,0,0.08);
+                --error-bg: #fce8e6;
+                --shadow: 0 1px 2px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06);
             }
         }
 
@@ -156,23 +156,25 @@
             font-family: var(--font-mono);
             font-weight: 600;
             letter-spacing: 0.03em;
-            transition: background 0.12s, color 0.12s, border-color 0.12s;
+            transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
         }
 
         .primary-button {
             width: 100%;
-            min-height: 48px;
-            padding: 12px 20px;
+            height: 48px;
+            padding: 0 24px;
             background: var(--accent);
-            color: #1a1c1e;
+            color: #fff;
             font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.06em;
+            border-radius: 8px;
         }
 
         .primary-button:hover,
         .primary-button:focus-visible {
-            background: #e6a800;
+            background: var(--accent-dim);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
         .primary-button:disabled {
@@ -181,69 +183,24 @@
         }
 
         .secondary-button {
-            min-height: 38px;
-            padding: 8px 14px;
+            height: 36px;
+            padding: 0 14px;
             background: transparent;
             color: var(--text-muted);
             border: 1px solid var(--border);
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .secondary-button:hover,
         .secondary-button:focus-visible {
             border-color: var(--accent);
             color: var(--accent);
-        }
-
-        /* ---- mic ---- */
-        .mic-button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px;
-            min-height: 40px;
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: border-color 0.12s, color 0.12s;
-            padding: 0;
-        }
-
-        .mic-button svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .mic-button:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .mic-button.listening {
-            border-color: var(--error);
-            color: var(--error);
-        }
-
-        .mic-button.listening svg {
-            animation: signal-pulse 0.8s ease-in-out infinite;
-        }
-
-        .mic-button.processing {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-
-        @keyframes signal-pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.35; }
         }
 
         /* ---- layout ---- */
@@ -348,7 +305,7 @@
             font-size: 12px;
             line-height: 1.4;
             color: var(--text);
-            transition: background 0.1s, border-color 0.1s;
+            transition: background 0.2s, border-color 0.2s;
             margin-bottom: 2px;
         }
 
@@ -392,17 +349,19 @@
             border: 1px solid var(--border);
             color: var(--text-muted);
             cursor: pointer;
-            padding: 6px 8px;
+            width: 36px;
+            height: 36px;
             margin-right: 10px;
-            min-width: 36px;
-            min-height: 36px;
             align-items: center;
             justify-content: center;
+            border-radius: 18px;
+            flex-shrink: 0;
+            transition: border-color 0.2s, color 0.2s;
         }
 
         .sidebar-toggle svg {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             stroke: currentColor;
             fill: none;
             stroke-width: 2;
@@ -507,24 +466,25 @@
             white-space: pre-wrap;
             word-break: break-word;
             font-size: 14px;
+            border-radius: 12px;
         }
 
         .message-row.user .bubble {
             background: var(--user-surface);
             color: var(--text);
-            border-left: 3px solid var(--accent);
+            box-shadow: var(--shadow);
         }
 
         .message-row.assistant .bubble {
             background: var(--bot-surface);
             color: var(--text);
-            border-left: 3px solid var(--border);
+            box-shadow: var(--shadow);
         }
 
         .message-row.system .bubble {
             background: var(--error-bg);
             color: var(--error);
-            border-left: 3px solid var(--error);
+            border: 1px solid var(--error);
             font-family: var(--font-mono);
             font-size: 12px;
         }
@@ -581,7 +541,7 @@
             -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'%3E%3C/line%3E%3Cline x1='5' y1='12' x2='19' y2='12'%3E%3C/line%3E%3C/svg%3E") center/contain no-repeat;
             flex-shrink: 0;
             color: var(--accent);
-            transition: transform 0.15s;
+            transition: transform 0.2s;
         }
 
         .citation-card[open] summary::after {
@@ -612,7 +572,7 @@
             margin-top: 10px;
             border: 1px solid var(--border);
             cursor: pointer;
-            transition: border-color 0.12s;
+            transition: border-color 0.2s;
         }
 
         .citation-thumb:hover { border-color: var(--accent); }
@@ -638,7 +598,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: border-color 0.1s, color 0.1s, background 0.1s;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
         }
 
         .feedback-btn svg {
@@ -729,6 +689,229 @@
             50% { opacity: 1; }
         }
 
+        /* ---- model selector ---- */
+        .model-select {
+            height: 36px;
+            background: var(--surface-muted);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0 24px 0 10px;
+            cursor: pointer;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0a6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+        }
+
+        .model-select:hover,
+        .model-select:focus-visible {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        .model-select option {
+            background: var(--surface);
+            color: var(--text);
+            font-family: var(--font-mono);
+        }
+
+        /* ---- composer attach button ---- */
+        .composer-attach-btn {
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border-radius: 20px;
+            flex-shrink: 0;
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .composer-attach-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .composer-attach-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ---- OCR preview ---- */
+        .ocr-preview {
+            display: flex;
+            gap: 8px;
+            padding: 8px 0;
+            align-items: flex-start;
+        }
+
+        .ocr-preview-image {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .ocr-preview-text-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .ocr-preview-text {
+            width: 100%;
+            background: var(--surface-muted);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            padding: 6px 8px;
+            resize: vertical;
+            outline: none;
+        }
+
+        .ocr-preview-text:focus { border-color: var(--accent); }
+
+        .ocr-cancel-btn { align-self: flex-start; }
+
+        /* ---- copy button ---- */
+        .copy-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            height: 30px;
+            padding: 0 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-top: 8px;
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .copy-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .copy-btn.copied { border-color: #22c55e; color: #22c55e; }
+
+        /* ---- empty state ---- */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            height: 100%;
+        }
+
+        .empty-state-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 20px;
+            color: var(--accent);
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .empty-state h3 {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 8px;
+            color: var(--text);
+        }
+
+        .empty-state p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin: 0 0 24px;
+            max-width: 400px;
+        }
+
+        .prompt-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            max-width: 480px;
+        }
+
+        .prompt-chip {
+            background: var(--surface-muted);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 8px 14px;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+            white-space: nowrap;
+        }
+
+        .prompt-chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ---- sidebar search ---- */
+        .sidebar-search {
+            margin: 8px 10px 0;
+        }
+
+        .sidebar-search input {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 8px 10px;
+            outline: none;
+        }
+
+        .sidebar-search input::placeholder { color: var(--text-muted); }
+        .sidebar-search input:focus { border-color: var(--accent); }
+
         /* ---- composer ---- */
         .composer-wrap {
             position: sticky;
@@ -740,11 +923,13 @@
 
         .composer {
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             gap: 8px;
             padding: 8px;
             border: 1px solid var(--border);
+            border-radius: 12px;
             background: var(--surface);
+            box-shadow: var(--shadow);
         }
 
         .composer textarea {
@@ -767,22 +952,18 @@
         .composer textarea:focus { outline: none; }
 
         .icon-button {
-            min-width: 44px;
-            min-height: 44px;
+            width: 40px;
+            height: 40px;
             background: var(--accent);
-            color: #1a1c1e;
-            font-family: var(--font-mono);
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            padding: 0 12px;
+            color: #fff;
             cursor: pointer;
             border: none;
+            border-radius: 20px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.12s;
+            transition: background 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
         }
 
         .icon-button svg {
@@ -796,11 +977,15 @@
         }
 
         .icon-button:hover,
-        .icon-button:focus-visible { background: #e6a800; }
+        .icon-button:focus-visible {
+            background: var(--accent-dim);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
 
         .icon-button:disabled {
             opacity: 0.4;
             cursor: not-allowed;
+            box-shadow: none;
         }
 
         .footer-note {
@@ -861,7 +1046,7 @@
                 max-width: 300px;
                 z-index: 50;
                 box-shadow: var(--shadow);
-                transition: transform 0.15s ease;
+                transition: transform 0.2s ease;
             }
 
             .history-sidebar.hidden {
@@ -884,7 +1069,6 @@
 
             .brand-text p { display: none; }
         }
-    </style>
     </style>
 </head>
 <body>
@@ -919,6 +1103,7 @@
                                 </div>
                             </div>
                             <div class="topbar-actions">
+                                <select id="modelSelector" class="model-select" data-testid="model-selector" aria-label="Model selection"></select>
                                 <div id="userDisplay" class="user-pill" data-testid="user-display"></div>
                                 <button id="logoutButton" class="secondary-button" data-testid="logout-button">Logout</button>
                             </div>
@@ -927,12 +1112,20 @@
                         <main id="messageList" class="message-list" data-testid="message-list"></main>
 
                         <div class="composer-wrap">
+                            <div id="ocrPreview" class="ocr-preview hidden">
+                                <img id="ocrPreviewImage" class="ocr-preview-image" alt="Captured image preview">
+                                <div class="ocr-preview-text-wrap">
+                                    <textarea id="ocrPreviewText" class="ocr-preview-text" rows="2" placeholder="Extracted text will appear here..."></textarea>
+                                    <button id="ocrCancelButton" class="secondary-button ocr-cancel-btn">Remove</button>
+                                </div>
+                            </div>
                             <div class="composer">
+                                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
+                                <button id="cameraButton" class="composer-attach-btn" data-testid="camera-button" title="Capture model number" aria-label="Capture model number"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
                                 <textarea id="messageInput" data-testid="message-input" rows="1" placeholder="Ask about diagnostics, parts, procedures, or troubleshooting steps..."></textarea>
-                                <button id="micButton" class="mic-button" data-testid="mic-button" title="Voice input" aria-label="Voice input"><svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
                                 <button id="sendButton" class="icon-button" data-testid="send-button" aria-label="Send message"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
                             </div>
-                            <div class="footer-note">Use Enter to send • Shift+Enter for a new line</div>
+                            <div class="footer-note">Enter to send &#8226; Shift+Enter for new line</div>
                         </div>
                     </div>
 
@@ -957,7 +1150,11 @@
             devMode: false,
             conversationId: sessionStorage.getItem("conversation_id") || null,
             loadingElement: null,
-            activeDocument: null
+            activeDocument: null,
+            selectedModel: localStorage.getItem("selected_model") || "",
+            ocrImage: null,
+            ocrText: "",
+            lastRole: null
         };
 
         const elements = {
@@ -980,7 +1177,13 @@
             newChatButton: document.getElementById("newChatButton"),
             sidebarToggle: document.getElementById("sidebarToggle"),
             sidebarCloseButton: document.getElementById("sidebarCloseButton"),
-            micButton: document.getElementById("micButton")
+            modelSelector: document.getElementById("modelSelector"),
+            cameraButton: document.getElementById("cameraButton"),
+            cameraInput: document.getElementById("cameraInput"),
+            ocrPreview: document.getElementById("ocrPreview"),
+            ocrPreviewImage: document.getElementById("ocrPreviewImage"),
+            ocrPreviewText: document.getElementById("ocrPreviewText"),
+            ocrCancelButton: document.getElementById("ocrCancelButton")
         };
         let sidebarBackdrop = null;
 
@@ -1036,33 +1239,58 @@
             });
         }
 
-        function createMessageRow(role, labelText, bodyText) {
+        function createMessageRow(role, labelText, bodyText, skipLabel) {
             const row = document.createElement("div");
             row.className = `message-row ${role}`;
 
             const bubble = document.createElement("div");
             bubble.className = "bubble";
 
-            const label = document.createElement("div");
-            label.className = "meta-label";
-            label.textContent = labelText;
+            if (!skipLabel) {
+                const label = document.createElement("div");
+                label.className = "meta-label";
+                label.textContent = labelText;
+                bubble.appendChild(label);
+            }
 
             const body = document.createElement("div");
             body.textContent = bodyText;
 
-            bubble.appendChild(label);
             bubble.appendChild(body);
             row.appendChild(bubble);
             return { row, bubble };
         }
 
         function appendMessage(role, text, citations = [], messageIndex = -1) {
+            // Clear empty state if present
+            const emptyState = elements.messageList.querySelector(".empty-state");
+            if (emptyState) emptyState.remove();
+
             const labelMap = {
                 user: "You",
                 assistant: "Appliance AI",
                 system: "System"
             };
-            const { row, bubble } = createMessageRow(role, labelMap[role] || "Message", text);
+            // Group consecutive messages from the same role
+            const skipLabel = (role === state.lastRole && role !== "system");
+            state.lastRole = role;
+
+            const { row, bubble } = createMessageRow(role, labelMap[role] || "Message", text, skipLabel);
+
+            // Copy button on assistant messages
+            if (role === "assistant" && text) {
+                const copyBtn = document.createElement("button");
+                copyBtn.className = "copy-btn";
+                copyBtn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+                copyBtn.title = "Copy response";
+                copyBtn.addEventListener("click", () => {
+                    navigator.clipboard.writeText(text).then(() => {
+                        copyBtn.classList.add("copied");
+                        setTimeout(() => copyBtn.classList.remove("copied"), 1500);
+                    }).catch(() => {});
+                });
+                bubble.appendChild(copyBtn);
+            }
 
             if (role === "assistant" && citations.length) {
                 const citationList = document.createElement("div");
@@ -1335,20 +1563,128 @@
                 : (account.name || account.username || "Signed in");
             elements.userDisplay.textContent = displayName;
             showChat();
-            if (!elements.messageList.childElementCount) {
-                appendMessage(
-                    "assistant",
-                    "Hi. Ask a question about diagnostics, repair procedures, parts, or service manual steps. I will answer from the indexed manuals and provide citations."
-                );
-            }
+            showEmptyState();
             try {
                 await getAccessToken();
             } catch (error) {
                 showErrorMessage(`Authentication error: ${error.message || error}`);
             }
 
-            // Load conversation history after entering chat
+            // Initialize model selector and load conversation history
+            initModelSelector();
             refreshConversationList();
+        }
+
+        function showEmptyState() {
+            elements.messageList.innerHTML = "";
+            const wrapper = document.createElement("div");
+            wrapper.className = "empty-state";
+
+            const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            icon.setAttribute("viewBox", "0 0 24 24");
+            icon.setAttribute("class", "empty-state-icon");
+            icon.innerHTML = '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>';
+
+            const heading = document.createElement("h3");
+            heading.textContent = "Appliance Repair Assistant";
+
+            const desc = document.createElement("p");
+            desc.textContent = "Search service manuals, diagnostic procedures, and parts information. Attach a photo of a model number plate to focus your search.";
+
+            const chips = document.createElement("div");
+            chips.className = "prompt-chips";
+            const prompts = [
+                "Diagnose error code",
+                "Find a replacement part",
+                "Troubleshoot not cooling",
+                "Wiring diagram help"
+            ];
+            prompts.forEach(prompt => {
+                const chip = document.createElement("button");
+                chip.className = "prompt-chip";
+                chip.textContent = prompt;
+                chip.addEventListener("click", () => {
+                    elements.messageInput.value = prompt;
+                    elements.messageInput.focus();
+                    autoResizeTextarea();
+                });
+                chips.appendChild(chip);
+            });
+
+            wrapper.appendChild(icon);
+            wrapper.appendChild(heading);
+            wrapper.appendChild(desc);
+            wrapper.appendChild(chips);
+            elements.messageList.appendChild(wrapper);
+        }
+
+        // -------------------------------------------------------------------
+        // Model selector
+        // -------------------------------------------------------------------
+
+        async function initModelSelector() {
+            try {
+                const response = await fetch("/models");
+                if (!response.ok) return;
+                const models = await response.json();
+                if (!models.length) return;
+                elements.modelSelector.innerHTML = models.map(
+                    m => `<option value="${m.id}" ${m.id === state.selectedModel ? "selected" : ""}>${m.name}</option>`
+                ).join("");
+                elements.modelSelector.addEventListener("change", () => {
+                    state.selectedModel = elements.modelSelector.value;
+                    localStorage.setItem("selected_model", state.selectedModel);
+                });
+            } catch { /* /models endpoint may not be available yet */ }
+        }
+
+        // -------------------------------------------------------------------
+        // Camera / OCR
+        // -------------------------------------------------------------------
+
+        function clearOcrPreview() {
+            state.ocrImage = null;
+            state.ocrText = "";
+            elements.ocrPreview.classList.add("hidden");
+            elements.ocrPreviewImage.removeAttribute("src");
+            elements.ocrPreviewText.value = "";
+        }
+
+        async function handleCameraCapture(file) {
+            if (!file) return;
+            state.ocrImage = file;
+
+            // Show preview
+            const url = URL.createObjectURL(file);
+            elements.ocrPreviewImage.src = url;
+            elements.ocrPreviewText.value = "";
+            elements.ocrPreviewText.placeholder = "Extracting text...";
+            elements.ocrPreview.classList.remove("hidden");
+
+            try {
+                const token = await getAccessToken();
+                const formData = new FormData();
+                formData.append("image", file);
+                const headers = {};
+                if (token) {
+                    headers.Authorization = `Bearer ${token}`;
+                }
+                const response = await fetch("/ocr", {
+                    method: "POST",
+                    headers,
+                    body: formData
+                });
+                if (!response.ok) {
+                    throw new Error("OCR failed");
+                }
+                const result = await response.json();
+                state.ocrText = result.text || "";
+                elements.ocrPreviewText.value = state.ocrText;
+                elements.ocrPreviewText.placeholder = "Edit extracted text if needed...";
+            } catch {
+                elements.ocrPreviewText.placeholder = "OCR unavailable — type model info manually";
+                state.ocrText = "";
+            }
         }
 
         // -------------------------------------------------------------------
@@ -1428,6 +1764,24 @@
                 elements.workspace.classList.add("has-sidebar");
             }
 
+            // Sidebar search
+            let searchInput = list.parentElement.querySelector(".sidebar-search input");
+            if (!searchInput) {
+                const searchWrap = document.createElement("div");
+                searchWrap.className = "sidebar-search";
+                searchInput = document.createElement("input");
+                searchInput.placeholder = "Filter conversations...";
+                searchInput.addEventListener("input", () => {
+                    const term = searchInput.value.toLowerCase();
+                    list.querySelectorAll(".conversation-item").forEach(item => {
+                        const title = (item.querySelector(".conv-title").textContent || "").toLowerCase();
+                        item.style.display = title.includes(term) ? "" : "none";
+                    });
+                });
+                searchWrap.appendChild(searchInput);
+                list.before(searchWrap);
+            }
+
             if (!conversations.length) {
                 const empty = document.createElement("div");
                 empty.className = "conv-empty";
@@ -1462,7 +1816,7 @@
                 count.textContent = dateStr;
 
                 const msgCount = document.createElement("span");
-                msgCount.textContent = `${Math.floor(conv.message_count / 2)} msgs`;
+                msgCount.textContent = `${Math.floor(conv.message_count / 2)} exchanges`;
 
                 meta.appendChild(count);
                 meta.appendChild(msgCount);
@@ -1534,14 +1888,12 @@
         }
 
         function startNewConversation() {
-            elements.messageList.innerHTML = "";
             state.conversationId = null;
+            state.lastRole = null;
             sessionStorage.removeItem("conversation_id");
             closePreview();
-            appendMessage(
-                "assistant",
-                "Hi. Ask a question about diagnostics, repair procedures, parts, or service manual steps. I will answer from the indexed manuals and provide citations."
-            );
+            clearOcrPreview();
+            showEmptyState();
             // Re-render sidebar to clear active state
             const items = elements.conversationList.querySelectorAll(
                 ".conversation-item"
@@ -1567,137 +1919,20 @@
             });
         }
 
-        // -------------------------------------------------------------------
-        // Voice input (Web Speech API)
-        // -------------------------------------------------------------------
-
-        const VoiceInput = (function () {
-            let recognition = null;
-            let active = false;
-
-            const SpeechRecognition =
-                window.SpeechRecognition || window.webkitSpeechRecognition;
-
-            function isSupported() {
-                return Boolean(SpeechRecognition);
-            }
-
-            function start() {
-                if (!isSupported() || active) {
-                    return;
-                }
-                active = true;
-                elements.micButton.classList.add("listening");
-                elements.micButton.classList.remove("processing");
-
-                recognition = new SpeechRecognition();
-                recognition.continuous = true;
-                recognition.interimResults = true;
-                recognition.lang = "en-US";
-
-                recognition.onresult = function (event) {
-                    let finalText = "";
-                    let interimText = "";
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        const result = event.results[i];
-                        if (result.isFinal) {
-                            finalText += result[0].transcript;
-                        } else {
-                            interimText += result[0].transcript;
-                        }
-                    }
-                    elements.messageInput.value = (
-                        elements.messageInput.value + finalText
-                    ).trim();
-                    if (interimText) {
-                        // Show interim below or as placeholder
-                    }
-                };
-
-                recognition.onerror = function (event) {
-                    if (event.error === "no-speech") {
-                        // User didn't speak; just stop silently
-                        stop();
-                    } else if (
-                        event.error === "aborted" ||
-                        event.error === "not-allowed"
-                    ) {
-                        stop();
-                        showErrorMessage(
-                            "Microphone access is not available. Check your browser permissions."
-                        );
-                    } else {
-                        stop();
-                    }
-                };
-
-                recognition.onend = function () {
-                    stop();
-                    // Auto-send if there's text
-                    const text = elements.messageInput.value.trim();
-                    if (text) {
-                        sendMessage();
-                    }
-                };
-
-                recognition.onspeechend = function () {
-                    // User stopped speaking — give a brief pause then stop
-                    setTimeout(function () {
-                        if (active) {
-                            stop();
-                        }
-                    }, 1500);
-                };
-
-                recognition.start();
-            }
-
-            function stop() {
-                if (!active) {
-                    return;
-                }
-                active = false;
-                elements.micButton.classList.remove("listening");
-                elements.micButton.classList.add("processing");
-
-                if (recognition) {
-                    try {
-                        recognition.stop();
-                    } catch (_) {
-                        // Already stopped
-                    }
-                    recognition = null;
-                }
-
-                // Clean up processing state after a short delay
-                setTimeout(function () {
-                    elements.micButton.classList.remove("processing");
-                }, 600);
-            }
-
-            function toggle() {
-                if (active) {
-                    stop();
-                } else {
-                    start();
-                }
-            }
-
-            return { isSupported, start, stop, toggle };
-        })();
-
-        // Hide mic button if browser doesn't support speech recognition
-        if (!VoiceInput.isSupported()) {
-            elements.micButton.style.display = "none";
-        }
-
         async function sendMessage() {
             const text = elements.messageInput.value.trim();
             if (!text) {
                 return;
             }
 
+            // Build message with optional OCR context
+            let messageText = text;
+            if (state.ocrText) {
+                messageText = `[Appliance context from image: ${state.ocrText}]\n\n${text}`;
+            }
+
             appendMessage("user", text);
+            clearOcrPreview();
             elements.messageInput.value = "";
             autoResizeTextarea();
             setComposerState(true);
@@ -1712,13 +1947,18 @@
                     headers.Authorization = `Bearer ${token}`;
                 }
 
+                const body = {
+                    message: messageText,
+                    conversation_id: state.conversationId
+                };
+                if (state.selectedModel) {
+                    body.model = state.selectedModel;
+                }
+
                 const response = await fetch("/chat", {
                     method: "POST",
                     headers,
-                    body: JSON.stringify({
-                        message: text,
-                        conversation_id: state.conversationId
-                    })
+                    body: JSON.stringify(body)
                 });
 
                 const payload = await response.json().catch(() => ({}));
@@ -1822,9 +2062,16 @@
                 closeSidebar();
             }
         });
-        elements.micButton.addEventListener("click", function () {
-            VoiceInput.toggle();
+        elements.cameraButton.addEventListener("click", () => {
+            elements.cameraInput.click();
         });
+
+        elements.cameraInput.addEventListener("change", (event) => {
+            handleCameraCapture(event.target.files[0]);
+            event.target.value = "";
+        });
+
+        elements.ocrCancelButton.addEventListener("click", clearOcrPreview);
 
         autoResizeTextarea();
         renderPreviewPane();

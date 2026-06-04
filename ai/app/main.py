@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 import uuid
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -73,6 +73,17 @@ async def auth_config() -> dict:
     }
 
 
+@app.get("/models")
+async def list_models() -> list[dict]:
+    """Return the available model deployments for the model selector."""
+    from config import FOUNDRY_MODEL_DEPLOYMENTS
+
+    deployments = [
+        d.strip() for d in FOUNDRY_MODEL_DEPLOYMENTS.split(",") if d.strip()
+    ]
+    return [{"id": d, "name": d} for d in deployments]
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(
     payload: ChatRequest,
@@ -84,7 +95,9 @@ async def chat_endpoint(
         oid = _user_oid(user)
 
         foundry_conv_id = store.get_foundry_id(oid, conversation_id)
-        answer, citations, foundry_conv_id = generate_response(payload.message, foundry_conv_id)
+        answer, citations, foundry_conv_id = generate_response(
+            payload.message, foundry_conv_id, model=payload.model
+        )
 
         msg_idx = store.append_exchange(
             user_oid=oid,
@@ -218,6 +231,28 @@ async def submit_feedback(
     )
 
     return {"status": "recorded"}
+
+
+# ---------------------------------------------------------------------------
+# OCR / vision endpoint
+# ---------------------------------------------------------------------------
+
+
+@app.post("/ocr")
+async def ocr_image(
+    image: UploadFile,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    """Extract text from an uploaded image using the vision model.
+
+    Accepts multipart form data with a single ``image`` file field.
+    Returns ``{"text": "extracted model numbers..."}``.
+    """
+    from vision import extract_text_from_image
+
+    contents = await image.read()
+    text = extract_text_from_image(contents, mime_type=image.content_type or "image/jpeg")
+    return {"text": text}
 
 
 # ---------------------------------------------------------------------------

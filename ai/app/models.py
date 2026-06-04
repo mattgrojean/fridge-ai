@@ -6,6 +6,17 @@ from pydantic import BaseModel
 class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
+    model: Optional[str] = None
+
+
+class OCRRequest(BaseModel):
+    """Image upload for OCR extraction — the image is sent as multipart form data."""
+
+    pass
+
+
+class OCRResponse(BaseModel):
+    text: str
 
 
 class Citation(BaseModel):

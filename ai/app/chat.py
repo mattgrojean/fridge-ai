@@ -51,6 +51,7 @@ def delete_foundry_conversation(foundry_conversation_id: str) -> None:
 def generate_response(
     user_message: str,
     foundry_conversation_id: Optional[str] = None,
+    model: Optional[str] = None,
 ) -> Tuple[str, List[Citation], str]:
     """
     Calls the Foundry Agent with the user message, managing conversation state.
@@ -59,7 +60,7 @@ def generate_response(
     """
     from search import get_openai_client, get_or_create_agent
 
-    agent = get_or_create_agent()
+    agent = get_or_create_agent(model=model)
     openai_client = get_openai_client()
 
     if foundry_conversation_id is None:
