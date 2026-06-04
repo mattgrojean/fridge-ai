@@ -35,6 +35,19 @@ def _parse_citations(output_items) -> List[Citation]:
     return citations
 
 
+def delete_foundry_conversation(foundry_conversation_id: str) -> None:
+    """Delete a Foundry conversation, ignoring errors if it is already gone."""
+    try:
+        from search import get_openai_client
+
+        client = get_openai_client()
+        client.conversations.delete(conversation_id=foundry_conversation_id)
+    except Exception:
+        logger.debug(
+            "Could not delete Foundry conversation %s", foundry_conversation_id, exc_info=True
+        )
+
+
 def generate_response(
     user_message: str,
     foundry_conversation_id: Optional[str] = None,

@@ -1,3 +1,5 @@
+import io
+import logging
 import os
 import re
 from datetime import datetime, timedelta, timezone
@@ -8,6 +10,8 @@ from urllib.parse import quote, urlparse
 import httpx
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobSasPermissions, BlobServiceClient, generate_blob_sas
+
+logger = logging.getLogger(__name__)
 
 from config import (
     AZURE_CLIENT_ID,
@@ -162,3 +166,40 @@ def resolve_document_link(doc_id: str) -> dict | None:
         ),
         "pageNumber": page_number,
     }
+
+
+def render_pdf_page(blob_name: str, page_number: int, max_width: int = 800) -> bytes | None:
+    """Download a PDF blob, render a single page as PNG, return bytes.
+
+    Returns ``None`` if the page doesn't exist or the blob is unreadable.
+    """
+    blob_service_client = get_blob_service_client()
+    container_client = blob_service_client.get_container_client(AZURE_STORAGE_CONTAINER_NAME)
+
+    try:
+        stream = container_client.download_blob(blob_name)
+        pdf_bytes = stream.readall()
+    except Exception:
+        logger.warning("Unable to download blob %s for thumbnail", blob_name, exc_info=True)
+        return None
+
+    import fitz  # PyMuPDF — lazy import, only needed for thumbnails
+
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    except Exception:
+        logger.warning("Unable to open PDF blob %s", blob_name, exc_info=True)
+        return None
+
+    if page_number < 0 or page_number >= doc.page_count:
+        doc.close()
+        return None
+
+    page = doc[page_number]
+    # fitz is imported inside the try block above
+    zoom = max_width / page.rect.width
+    mat = fitz.Matrix(zoom, zoom)
+    pix = page.get_pixmap(matrix=mat, colorspace=fitz.csRGB)
+    doc.close()
+
+    return pix.tobytes(output="png")

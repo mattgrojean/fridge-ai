@@ -9,3 +9,4 @@ httpx==0.28.1
 pydantic==2.11.3
 python-multipart==0.0.20
 azure-storage-blob==12.25.1
+PyMuPDF==1.25.1

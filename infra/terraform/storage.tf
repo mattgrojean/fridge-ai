@@ -13,3 +13,9 @@ resource "azurerm_storage_container" "manuals" {
   storage_account_id    = azurerm_storage_account.main.id
   container_access_type = "private"
 }
+
+resource "azurerm_storage_container" "conversations" {
+  name                  = "conversations"
+  storage_account_id    = azurerm_storage_account.main.id
+  container_access_type = "private"
+}

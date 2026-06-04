@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel
 
@@ -22,3 +22,44 @@ class ChatResponse(BaseModel):
     answer: str
     citations: List[Citation]
     conversation_id: str
+    message_index: int = -1
+
+
+# ---------------------------------------------------------------------------
+# Conversation history models
+# ---------------------------------------------------------------------------
+
+
+class Message(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+    citations: List[Citation] = []
+    timestamp: str = ""
+
+
+class ConversationSummary(BaseModel):
+    id: str
+    title: str
+    created_at: str
+    updated_at: str
+    message_count: int
+
+
+class ConversationDetail(BaseModel):
+    id: str
+    user_oid: str
+    created_at: str
+    updated_at: str
+    messages: List[Message]
+
+
+# ---------------------------------------------------------------------------
+# Feedback
+# ---------------------------------------------------------------------------
+
+
+class FeedbackRequest(BaseModel):
+    conversation_id: str
+    message_index: int
+    rating: Literal["up", "down"]
+    comment: Optional[str] = None
